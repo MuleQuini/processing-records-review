@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="af894aa0-9869-4840-888c-5dbfd1bfc8a2" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="25d95075-62ed-4350-bac4-c9dc880a8c0a" >
+		<file:connection workingDir="C:\Users\52715\Desktop\data\account" />
+	</file:config>
+	<flow name="main" doc:id="ae5c3766-22a1-4019-a758-078d6fd44bb3" >
+		<http:listener doc:name="HTTP: GET /" doc:id="bd584bd6-fd42-44e7-8fd9-73788f2c866c" config-ref="HTTP_Listener_config" path="/main"/>
+		<set-payload value='#[{
+	"account" : {
+		"accountID" : "4829ADJ-4833",
+		"name" : "Mary Loo",
+		"balance" : "48191.48"
+	},
+	"account" :{
+		"accountID" : "438ZAJJ-4833",
+		"name" : "Lauren Flok",
+		"balance" : "1391.48"
+	},
+	"account" :{
+		"accountID" : "KJ6FF8-4833",
+		"name" : "Lak Li",
+		"balance" : "282.48"
+	}
+
+}]' doc:name="Set Payload" doc:id="df1aca01-17b2-4cea-8057-6d54a4743169" />
+		<ee:transform doc:name="Transform Message" doc:id="3960a3c4-9252-4c1f-82dc-264a7326c158" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[payload]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="5620fb1b-52ec-4469-be5a-5526878626fa" batchSize="2">
+			<logger level="INFO" doc:name="Logger" doc:id="b2fbe365-6c04-49aa-be37-c3a076c5555b" message="#[payload.accountID]"/>
+		</foreach>
+	</flow>
+	<flow name="readOrders" doc:id="56cad2d2-e9e0-499d-a1f7-51983bc10294" initialState="started">
+		<http:listener doc:name="Listener" doc:id="6f97d785-d934-4981-97d0-9882c4fb5e1b" config-ref="HTTP_Listener_config" path="/readOrders" allowedMethods="GET"/>
+		<set-payload value="#[[1,2,3]]" doc:name="to [1,2,3]" doc:id="ffd7a5ea-b5a8-40dd-9b9d-27625870e7bb" />
+		<batch:job jobName="Batch_Job" doc:id="8dd38e2c-7da4-4ff8-a316-178fd7772509" >
+			<batch:process-records >
+				<batch:step name="Batch_Step_1" doc:id="29f59370-d37e-4602-b924-9304403fd67b" >
+					<set-variable value="#[payload]" doc:name="batchStepPayload to payload" doc:id="6c29ae6b-f200-425a-818b-4cb00e05e7c5" variableName="batchStepPayload"/>
+				</batch:step>
+				<batch:step name="Batch_Step_2" doc:id="e4a8f2ed-f7b2-455a-993a-9a4204d21f51" >
+					<set-variable value="#[payload +10]" doc:name=" Increment batchStepPayload to payload +10" doc:id="a320b9f2-8082-4a56-ab44-ca4cbdb18e57" variableName="batchStepPayload" />
+					<set-payload value="#[vars.batchStepPayload]" doc:name="to var batchStepPayload" doc:id="0ebbfa63-6f27-46c9-a5e8-7eb57ebc0134" />
+					<logger level="INFO" doc:name="Log payload" doc:id="6d62ffaa-bda5-4502-8fb1-a524904fc657" message="#[payload]"/>
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+	</flow>
+	<flow name="batchVars" doc:id="3c8ddd11-45e5-49d5-8f0d-e8aaca9ecac2" initialState="started">
+		<http:listener doc:name="Listener" doc:id="1117c651-31a2-40f4-8e16-a0a7219e4ec7" config-ref="HTTP_Listener_config" path="/batchVars"/>
+		<set-variable value="#[1]" doc:name="counter to 1" doc:id="9a5bc80d-bf9c-49ae-86d8-09c048f3c932" variableName="counter" />
+		<set-payload value="#[[1,2,3]]" doc:name="to [1,2,3]" doc:id="57f12d49-7049-47e6-8204-23f65e3a0568" />
+		<batch:job jobName="Batch_Job_2" doc:id="1c9587d0-f9ce-4df5-9910-92d11b4ca8d4" >
+			<batch:process-records >
+				<batch:step name="Batch_Step_2_1" doc:id="58ed7b22-902d-4995-b20c-2b4533a7cbcd" >
+					<set-variable value="#[vars.counter + 10]" doc:name="increment counter + 10" doc:id="54e5863c-1a07-44e9-b334-22bb57248bb1" variableName="counter" />
+					<set-variable value="#[vars.counter]" doc:name="stepVar to counter var" doc:id="91166c12-eaf3-41fa-a7dc-ad7b04cdc346" variableName="stepVar" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Log vars.counter" doc:id="6fbdc16b-48ae-4f47-ad87-14940d5c9cdb" message='#["counter-&gt; " ++ vars.counter]' />
+				<logger level="INFO" doc:name="Log  vars.stepVar" doc:id="13528233-ab96-4301-930c-8027b226db90" message='#["stepVar-&gt;" ++ vars.stepVar]' />
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+	<flow name="batchVars2" doc:id="37968122-8a2f-445e-8db8-6af22428db81" initialState="stopped">
+		<scheduler doc:name="Scheduler" doc:id="781042c6-520d-4b2b-82c8-4d60fe8e1ebf" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="5" timeUnit="MINUTES" />
+			</scheduling-strategy>
+		</scheduler>
+		<set-variable value="#[1]" doc:name="counter to 1" doc:id="47d7b0ea-01f2-4a6c-90d9-3999fedfa73d" variableName="counter" />
+		<set-payload value="#[[1,2,3]]" doc:name="to [1,2,3]" doc:id="ba3a940f-5c8c-464f-8559-e9d49219bea2" />
+		<batch:job jobName="Batch_Job_3" doc:id="b7387b16-5340-4c72-830c-d2b765db6efd" >
+			<batch:process-records >
+				<batch:step name="Batch_Step_3" doc:id="1a04529a-77b9-4843-9911-5324335a3854" >
+					<set-variable value="#[vars.counter + 10]" doc:name="increment counter + 10" doc:id="bcd2590b-6a96-4471-8e41-2980e944736c" variableName="incrementCounter" />
+					<set-variable value="#[vars.counter]" doc:name="stepVar to counter var" doc:id="e4a80b4c-51a1-4019-a4d3-10aaba981f34" variableName="stepVar" />
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+		<logger level="INFO" doc:name="Log vars.counter" doc:id="1493f9f1-3c09-4d48-a27e-c98328dbaf8e" message='#["counter-&gt; " ++ vars.counter]' />
+		<logger level="INFO" doc:name="Log  vars.stepVar" doc:id="d1198775-3319-432c-a34d-69a1766b1968" message='#["stepVar-&gt;" ++ vars.stepVar]' />
+	</flow>
+	<flow name="threeBatchSteps" doc:id="3c378034-4f5c-41f7-b28d-e8dd1fcd9f13" initialState="started">
+		<scheduler doc:name="Scheduler" doc:id="c761336a-6bb2-4021-8e2e-3985ded84ebf" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<set-payload value='#[[
+	{
+		"name": "A",
+		"apat": "a",
+		"age" : "1"
+	},
+	{
+		"name": "E",
+		"apat": "e",
+		"age" : "2"	
+	},
+	{
+		
+		"apat": "i",
+		"age" : "3"
+	},
+	{
+		"name": "O",
+		"apat": "o",	
+		"age" : "4"
+	},
+	{
+		"name": "U",
+		"apat": "u",	
+		"age" : "5"
+	}
+]]' doc:name='data' doc:id="01dc021b-ac81-4f0f-b674-73e58e75f05f" />
+		<batch:job jobName="Batch_Job_4" doc:id="32368316-bfea-4ac3-85c2-b053ffa19571">
+			<batch:process-records>
+				<batch:step name="Batch_Step_4_1" doc:id="78a1be28-75e9-46c0-971a-bc6b1b72f0d6">
+					<set-variable value='#[payload.name ++ " OK"]' doc:name='payload.name ++ " OK"' doc:id="86e547c7-9c49-4602-84a4-232fbf39eafa" variableName="varStep1" />
+					<logger level="INFO" doc:name="varStep1" doc:id="0b1f52ec-d020-4494-b1da-1107f1651b76" message="#[vars.varStep1]"/>
+				</batch:step>
+				<batch:step name="Batch_Step_4_2" doc:id="1773be8f-47b0-4886-9d94-57bfb97a2537" >
+					<set-variable value='#[payload.apat ++ " OK"]' doc:name='payload.apat ++ " OK"' doc:id="ff018f13-2334-4f16-a3a2-9bc4f17352f9" variableName="varStep2" />
+					<logger level="INFO" doc:name="varStep2" doc:id="435a7b81-e148-4d5b-beae-42409d23633f" message="#[vars.varStep2]" />
+				</batch:step>
+				<batch:step name="Batch_Step_4_3" doc:id="33791dc1-95a5-4c9b-a6c0-4de167ea8dc7">
+					<set-variable value='#[payload.age ++ " OK"]' doc:name='payload.age ++ " OK"' doc:id="1064ce58-2de4-4744-acf4-67eb6dd8a721" variableName="varStep3" />
+					<logger level="INFO" doc:name="varStep3" doc:id="8cddb8c7-33a4-40a7-9891-6f27e5689b41" message="#[vars.varStep3]" />
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+	</flow>
+	<flow name="main2" doc:id="039eda0a-3444-47c3-b932-59462f37f05f" initialState="stopped">
+		<scheduler doc:name="Scheduler" doc:id="efca9266-e1ac-4be0-9dd5-cc9acb2d6552" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="10000"/>
+			</scheduling-strategy>
+		</scheduler>
+		<set-payload value="#[[1,2,3,4]]" doc:name="[1,2,3,4]" doc:id="90802683-fc06-4a7a-bc4f-b19967fdf12b" />
+		<batch:job jobName="processRecordsBatchJob" doc:id="131c23f1-8f02-4335-85a7-8714815f4122" >
+			<batch:process-records >
+				<batch:step name="Batch_Step_With_Filter" doc:id="b787faac-72c0-4651-a98e-4bde6f6161b3" acceptExpression="#[(payload mod 2) != 0 ]">
+					<ee:transform doc:name="Divide by 3" doc:id="1510b904-918a-42f3-986b-1e7798e6b9ce" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload / 3]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<batch:aggregator doc:name="Batch_Aggregate_1" doc:id="92fb1aa0-b277-48aa-b16b-044515eedab2" size="2">
+						<logger level="INFO" doc:name="payload" doc:id="2b12a454-eea2-4757-9368-9f7024d393c2" message="#[payload]"/>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+	</flow>
+</mule>
